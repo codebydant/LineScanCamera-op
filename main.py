@@ -6,18 +6,18 @@ import configparser
 import numpy as np
 import matplotlib.pyplot as plt
 
-from sys import platform
-
-## ----------------------------------------------------- System
-## check if platform is windows or linux:
-if platform == "linux" or platform == "linux2":
-	sys.path.append("/opt/opencv-4.1.2/build/lib/python3")
-elif platform == "win32":
-    print("")
-    sys.path.append("C:/Users/Daniel/Desktop/opencv/opencv-4.1.2/build/lib/python3")
-else:
-	print("only for linux or windows")
-	sys.exit(-1)
+# from sys import platform
+#
+# ## ----------------------------------------------------- System
+# ## check if platform is windows or linux:
+# if platform == "linux" or platform == "linux2":
+# 	sys.path.append("/opt/opencv-4.1.2/build/lib/python3")
+# elif platform == "win32":
+#     print("")
+#     sys.path.append("C:/Users/Daniel/Desktop/opencv/opencv-4.1.2/build/lib/python3")
+# else:
+# 	print("only for linux or windows")
+# 	sys.exit(-1)
 
 ##----------------------------------------------------- Opencv
 import cv2
