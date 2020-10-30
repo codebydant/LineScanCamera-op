@@ -18,7 +18,11 @@ pip install -r requirements.txt
 
 2. Run script
 ```
-python3.7 main.py <video_file>
+python3 main.py <scan_mode> <video_file>
+
+example:
+
+python3 main.py column C:/Users/xXx/Downloads/videos/video.mp4
 ```
 
 3. Output image

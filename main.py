@@ -6,18 +6,18 @@ import configparser
 import numpy as np
 import matplotlib.pyplot as plt
 
-# from sys import platform
-#
-# ## ----------------------------------------------------- System
-# ## check if platform is windows or linux:
-# if platform == "linux" or platform == "linux2":
-# 	sys.path.append("/opt/opencv-4.1.2/build/lib/python3")
-# elif platform == "win32":
-#     print("")
-#     sys.path.append("C:/Users/Daniel/Desktop/opencv/opencv-4.1.2/build/lib/python3")
-# else:
-# 	print("only for linux or windows")
-# 	sys.exit(-1)
+from sys import platform
+
+## ----------------------------------------------------- System
+## check if platform is windows or linux:
+if platform == "linux" or platform == "linux2":
+	sys.path.append("/opt/opencv-4.1.2/build/lib/python3")
+elif platform == "win32":
+    print("")
+    sys.path.append("C:/Users/Daniel/Desktop/opencv/opencv-4.1.2/build/lib/python3")
+else:
+	print("only for linux or windows")
+	sys.exit(-1)
 
 ##----------------------------------------------------- Opencv
 import cv2
@@ -48,7 +48,7 @@ class ImageMetadata(object):
 class LineScanner(object):
 	'''
 	This class is the implementation of a LineScan Camera from an Area Scan Camera using OpenCV 4.1.2.
-	In this pipeline there are two mode of scan:
+	In this pipeline there are two scan mode:
 	1. Column mode:
 	In this mode the scanner will accumulate a column of pixels from each frame in an output cv::Mat object given
 	a centroid of reference. This process is much faster and smoothed but the output resolution is not too good.
@@ -74,6 +74,7 @@ class LineScanner(object):
 
 	def __init__(self):
 		self.filename = ""			# input filename
+		self.mode = ""				# mode (column/width)
 		self.input_dir = ""			# input directory
 		self.output_dir = ""		# output directory
 		self.totalFrames = 0		# number of frames in video
@@ -88,21 +89,42 @@ class LineScanner(object):
 	#######################################################################################
 	def init_scan(self):
 		'''
-		This is the scanner function.
+		*** DESCRIPTION
+			This is the scanner function.
 
-		Input:  video file
-		Output: List of ROis
+		*** INPUT
+			<scan_mode>:		scan mode to process video e.g.(column/width)
+			<video_path>:  		video file to process
+
+		*** OUTPUT
+			<scanned image>: 	A flat image (unwrapped) from the rotating object
 		'''
 
 		status = False
-		if len(sys.argv) < 2:
+		if len(sys.argv) < 3:
 			print("")
-			print ("-> Usage %s <video_file>" % sys.argv[0])
+			print ("-> Usage %s <scan_mode> <video_file>" % sys.argv[0])
 			print("")
 			sys.exit(-1)
 
 		## check if input file exists
-		self.input_dir = sys.argv[1]
+		self.mode = sys.argv[1]
+		if self.mode == "column":
+			print("-> scan mode: column")
+			pass
+		elif self.mode == "width":
+			print("-> scan mode: width")
+			pass
+		else:
+			print("")
+			print("-> mode: <column> for column pixel scan")
+			print("-> mode: <width> for width_roi pixel scan")
+			print ("-> Usage %s <scan_mode> <video_file>" % sys.argv[0])
+			print("")
+			sys.exit(-1)
+
+		## check if input file exists
+		self.input_dir = sys.argv[2]
 		if not os.path.isfile(self.input_dir):
 			print("-> file: %s could not be found"  % self.input_dir)
 			print("")
@@ -151,9 +173,6 @@ class LineScanner(object):
 		# totalFrames = 30
 		totalFrames = self.totalFrames
 
-		## Create widget for progressbar
-		bar = progressbar.ProgressBar(max_value=totalFrames,redirect_stdout=True,prefix = '-> Processing video:        ').start()
-
 		## ================================================================ DEBUG
 		## print debug info?
 		if config.getboolean('DEBUG','visualize'):
@@ -162,6 +181,24 @@ class LineScanner(object):
 			print("processing video...")
 			print("")
 		## ================================================================ DEBUG
+
+		if self.mode == "width":
+			## scan mode based in width_roi
+			self.width_scan_mode(video_obj)
+
+			## Concadenate list of ROis
+			self.concatenate_frames()
+
+		if self.mode == "column":
+			self.column_scan_mode(video_obj)
+
+
+	#######################################################################################
+	#######################################################################################
+	def width_scan_mode(self,video_obj):
+
+		## Create widget for progressbar
+		bar = progressbar.ProgressBar(max_value=self.totalFrames,redirect_stdout=True,prefix = '-> Processing video:        ').start()
 
 		## Plot raw image figure object
 		if config.getboolean('DEFAULT','visualize'):
@@ -284,6 +321,204 @@ class LineScanner(object):
 
 		## Close progressbar
 		bar.finish()
+
+	#######################################################################################
+	#######################################################################################
+	def column_scan_mode(self,video_obj):
+
+		## Create widget for progressbar
+		bar = progressbar.ProgressBar(max_value=self.totalFrames,redirect_stdout=True,prefix = '-> Processing video:        ').start()
+
+		## Plot raw image figure object
+		if config.getboolean('DEFAULT','visualize'):
+			fig = plt.gcf()
+			fig.canvas.set_window_title('Video')
+
+		## Centroid reference for ROi
+		centroid = {'x':0,'y':0}
+
+		## video reading frame status
+		success = True
+		count = 0
+
+		## Video dimensions
+		video_height = int(video_obj.get(cv2.CAP_PROP_FRAME_HEIGHT))
+		video_width = int(video_obj.get(cv2.CAP_PROP_FRAME_WIDTH))
+
+		## Flat image column Roi version
+		flatImage = np.empty((video_width,self.totalFrames,3), np.uint8)
+
+		## combinen image for pre-visualization
+		#combinedImage = np.empty((video_width,video_height+self.totalFrames,3), np.uint8)
+		combinedImage = np.empty((video_width,video_height*2,3), np.uint8)
+
+		## Scanner loop
+		while success:
+
+			## ================================================================ DEBUG
+			## print debug info?
+			if config.getboolean('DEBUG','visualize'):
+				print("-----------------------------------")
+				print("[DEBUG] frame {0}".format(count),end=' ')
+			## ================================================================ DEBUG
+
+			## frame from video object
+			success,image = video_obj.read()
+
+			## ================================================================ DEBUG
+			## Check if frame is corrupt
+			if not success:
+				if config.getboolean('DEBUG','visualize'):
+					print("[DEBUG] bad frame!")
+				continue
+
+			## Check if frame is not None
+			if image is None:
+				if config.getboolean('DEBUG','visualize'):
+					print("[DEBUG] empty frame!")
+				continue
+
+			## Check if frame is all black
+			if np.sum(image) == 0:
+				if config.getboolean('DEBUG','visualize'):
+					print("[DEBUG] black frame!")
+				continue
+
+			# Rotate 90 degrees the raw image (object from hori to vert pos)
+			image_rot = cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+			## Compute centroid (x,y), bounding box
+			## This will use to calculate the region of interest
+			if count == 0:
+				boundingBoxMetadata = self.computeObjectCoordinates(image_rot)
+				centroid['x'] = boundingBoxMetadata['cx']
+				centroid['y'] = boundingBoxMetadata['cy']
+				boundingBoxMetadata = {}
+
+			# Get image height,width
+			rows,cols = image_rot.shape[:2]
+			video_height = rows
+			video_width = cols
+
+			## Get column pixel based in the centroid
+			column_ROi = image_rot[:,int(centroid['x'])].copy()
+			# colROi = image1[:,int(image1.shape[1]/2)].copy()
+			flatImage[:,count] = column_ROi
+
+			# image.colRange(0, image.cols - 1).copyTo(combinedImage.colRange(0, image.cols - 1));
+	        # lineImage.colRange(0, image.cols - 1).copyTo(combinedImage.colRange(image.cols, combinedImage.cols - 1));
+
+			#image.colRange(0, image.cols - 1).copyTo(combinedImage.colRange(0, image.cols - 1));
+			# combinedImage[:,0:video_width] = image_rot[:,0:video_width].copy()
+			#combinedImage[:,self.totalFrames:combinedImage.shape[1]] = flatImage[:,0:self.totalFrames]
+
+			# Start coordinate, here (0, 0)
+			# represents the top left corner of image
+			start_point = (int(centroid['x']), 0)
+
+			# End coordinate, here (250, 250)
+			# represents the bottom right corner of image
+			end_point = (int(centroid['x']), video_height)
+
+			# Green color in BGR
+			color = (255, 0, 0)
+
+			# Line thickness of 9 px
+			thickness = 15
+
+			# Using cv2.line() method
+			# Draw a diagonal green line with thickness of 9 px
+			image_rot_Line = cv2.line(image_rot, start_point, end_point, color, thickness)
+			combinedImage[:,0:video_width] = image_rot_Line[:,0:video_width].copy()
+
+			newFlatVisu = np.empty((video_height,video_width,3), np.uint8)
+			newFlatVisu[:,0:self.totalFrames] = flatImage[:,0:self.totalFrames]
+			combinedImage[:,video_width:combinedImage.shape[1]] = newFlatVisu[:,0:video_width]
+
+			cv2.namedWindow("scanner",cv2.WINDOW_NORMAL)
+			cv2.resizeWindow("scanner",640,480)
+			cv2.imshow("scanner",combinedImage)
+			cv2.waitKey(1)
+
+
+			# image_t = combinedImage.copy()
+			# image_t = cv2.cvtColor(image_t, cv2.COLOR_BGR2RGB)
+			#
+			#
+			#
+			# ## Draw first frame
+			# if count > 0:
+			#
+			# 	fig.set_data(image_t)
+			# 	plt.title("frame {0}".format(count))
+			# 	plt.draw()
+			# 	plt.pause(0.00001)
+			#
+			# ## Update figure with new frame
+			# else:
+			# 	fig = plt.imshow(image_t)
+			# 	plt.title("frame {0}".format(count))
+			# 	plt.draw()
+			# 	plt.pause(0.00001)
+		## ================================================================ PLOT
+
+
+
+	        #lineImage.colRange(0, image.cols - 1).copyTo(combinedImage.colRange(image.cols, combinedImage.cols - 1));
+
+
+			## ================================================================ PLOT
+			## Visualize raw data in matplotlib
+			if config.getboolean('DEFAULT','visualize'):
+				## convert from BGR to RGB
+				image_t = image_rot.copy()
+				image_t = cv2.cvtColor(image_t, cv2.COLOR_BGR2RGB)
+
+				## Draw first frame
+				if count > 0:
+
+					fig.set_data(image_t)
+					plt.title("frame {0}".format(count))
+					plt.draw()
+					plt.pause(0.001)
+
+				## Update figure with new frame
+				else:
+					fig = plt.imshow(image_t)
+					plt.title("frame {0}".format(count))
+					plt.draw()
+					plt.pause(0.001)
+			## ================================================================ PLOT
+
+			## Update frame count
+			count +=1
+
+			## ================================================================ DEBUG
+			## print debug info?
+			if config.getboolean('DEBUG','visualize'):
+				print("done.")
+			## ================================================================ DEBUG
+
+			## Update progressbar
+			bar.update(count)
+		cv2.destroyAllWindows()
+		# plt.close('all')
+
+		## print debug info?
+		if config.getboolean('DEFAULT','visualize'):
+			plt.close('all')
+
+		## Close progressbar
+		bar.finish()
+
+		dsize = (video_width,video_height)
+
+		## resize image
+		flatImage = cv2.resize(flatImage, dsize)
+
+		## Save result in .png format
+		cv2.imwrite(os.path.join(self.output_dir,self.filename+"-ColumnROi.jpg"), flatImage)
+		print("")
 
 	#######################################################################################
 	#######################################################################################
@@ -542,11 +777,7 @@ class LineScanner(object):
 		## Save result in .png format
 		cv2.imwrite(os.path.join(self.output_dir,self.filename+"-WidthROi.jpg"), result)
 
-		## resize image
-		flatImage = cv2.resize(flatImage, dsize)
 
-		## Save result in .png format
-		cv2.imwrite(os.path.join(self.output_dir,self.filename+"-ColumnROi.jpg"), flatImage)
 
 		## ================================================================ PLOT
 		## Visualize stitched image in matplotlib
@@ -586,6 +817,3 @@ if __name__ == '__main__':
 
 	## Init scanner
 	scanner.init_scan()
-
-	## Concadenate list of ROis
-	scanner.concatenate_frames()
