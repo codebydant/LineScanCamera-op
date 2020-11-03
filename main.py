@@ -352,6 +352,11 @@ class LineScanner(object):
 		#combinedImage = np.empty((video_width,video_height+self.totalFrames,3), np.uint8)
 		combinedImage = np.empty((video_width,video_height*2,3), np.uint8)
 
+		# fig = plt.gcf()
+		fig = plt.figure()
+		# fig = plt.ion()
+		fig.canvas.set_window_title('Video')
+
 		## Scanner loop
 		while success:
 
@@ -431,22 +436,37 @@ class LineScanner(object):
 			image_rot_Line = cv2.line(image_rot, start_point, end_point, color, thickness)
 			combinedImage[:,0:video_width] = image_rot_Line[:,0:video_width].copy()
 
-			newFlatVisu = np.empty((video_height,video_width,3), np.uint8)
-			newFlatVisu[:,0:self.totalFrames] = flatImage[:,0:self.totalFrames]
-			combinedImage[:,video_width:combinedImage.shape[1]] = newFlatVisu[:,0:video_width]
+			# newFlatVisu = np.empty((video_height,video_width,3), np.uint8)
+			# newFlatVisu[:,0:self.totalFrames] = flatImage[:,0:self.totalFrames]
+			# combinedImage[:,video_width:combinedImage.shape[1]] = newFlatVisu[:,0:video_width]
+
+			combinedImage[:,video_width:video_width+self.totalFrames] = flatImage[:,0:self.totalFrames]
 
 			cv2.namedWindow("scanner",cv2.WINDOW_NORMAL)
 			cv2.resizeWindow("scanner",640,480)
 			cv2.imshow("scanner",combinedImage)
 			cv2.waitKey(1)
 
-
+			#
 			# image_t = combinedImage.copy()
 			# image_t = cv2.cvtColor(image_t, cv2.COLOR_BGR2RGB)
 			#
+			# image_t = cv2.resize(image_t, (480,640))
 			#
+			# if count > 0:
+			# 	fig.set_data(image_t)
 			#
-			# ## Draw first frame
+			# else:
+			# 	fig = plt.imshow(image_t)
+			#
+			# plt.title("frame {0}".format(count))
+			# plt.draw()
+			# plt.pause(0.0001)
+			#
+
+
+
+			## Draw first frame
 			# if count > 0:
 			#
 			# 	fig.set_data(image_t)
@@ -459,7 +479,7 @@ class LineScanner(object):
 			# 	fig = plt.imshow(image_t)
 			# 	plt.title("frame {0}".format(count))
 			# 	plt.draw()
-			# 	plt.pause(0.00001)
+			# 	plt.pause(0.0001)
 		## ================================================================ PLOT
 
 
