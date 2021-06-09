@@ -344,13 +344,21 @@ class LineScanner(object):
 		## Video dimensions
 		video_height = int(video_obj.get(cv2.CAP_PROP_FRAME_HEIGHT))
 		video_width = int(video_obj.get(cv2.CAP_PROP_FRAME_WIDTH))
+		print("height: ",video_height)
+		print("width: ",video_width)
+
 
 		## Flat image column Roi version
-		flatImage = np.empty((video_width,self.totalFrames,3), np.uint8)
+		# flatImage = np.empty((video_width,self.totalFrames,3), np.uint8)
+		flatImage = np.empty((video_height,self.totalFrames,3), np.uint8)
+		print("flat image size: ",flatImage.shape)
+
 
 		## combinen image for pre-visualization
 		#combinedImage = np.empty((video_width,video_height+self.totalFrames,3), np.uint8)
-		combinedImage = np.empty((video_width,video_height*2,3), np.uint8)
+		# combinedImage = np.empty((video_width,video_height*2,3), np.uint8)
+		combinedImage = np.empty((video_height,video_width*2,3), np.uint8)
+		print("size: ",combinedImage.shape)
 
 		# fig = plt.gcf()
 		fig = plt.figure()
@@ -390,7 +398,8 @@ class LineScanner(object):
 				continue
 
 			# Rotate 90 degrees the raw image (object from hori to vert pos)
-			image_rot = cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE)
+			#image_rot = cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE)
+			image_rot = image
 
 			## Compute centroid (x,y), bounding box
 			## This will use to calculate the region of interest
@@ -407,8 +416,10 @@ class LineScanner(object):
 
 			## Get column pixel based in the centroid
 			column_ROi = image_rot[:,int(centroid['x'])].copy()
+			print("size: ",column_ROi.shape)
 			# colROi = image1[:,int(image1.shape[1]/2)].copy()
 			flatImage[:,count] = column_ROi
+			
 
 			# image.colRange(0, image.cols - 1).copyTo(combinedImage.colRange(0, image.cols - 1));
 	        # lineImage.colRange(0, image.cols - 1).copyTo(combinedImage.colRange(image.cols, combinedImage.cols - 1));
@@ -440,12 +451,12 @@ class LineScanner(object):
 			# newFlatVisu[:,0:self.totalFrames] = flatImage[:,0:self.totalFrames]
 			# combinedImage[:,video_width:combinedImage.shape[1]] = newFlatVisu[:,0:video_width]
 
-			combinedImage[:,video_width:video_width+self.totalFrames] = flatImage[:,0:self.totalFrames]
+			# combinedImage[:,video_width:video_width+self.totalFrames] = flatImage[:,0:self.totalFrames]
 
-			cv2.namedWindow("scanner",cv2.WINDOW_NORMAL)
-			cv2.resizeWindow("scanner",640,480)
-			cv2.imshow("scanner",combinedImage)
-			cv2.waitKey(1)
+			# cv2.namedWindow("scanner",cv2.WINDOW_NORMAL)
+			# cv2.resizeWindow("scanner",640,480)
+			# cv2.imshow("scanner",combinedImage)
+			# cv2.waitKey(1)
 
 			#
 			# image_t = combinedImage.copy()
