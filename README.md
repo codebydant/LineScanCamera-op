@@ -1,7 +1,7 @@
 # Line Scan Camera
 This is a simple implementation of a Line Scan Camera from a video of an Area Scan Camera using OpenCV 4.1.2. A line scan camera uses a single line of sensor pixels (effectively one-dimensional) to build up a two-dimensional image. The second dimension results from the motion of the object being imaged. Two-dimensional images are acquired line by line by successive single-line scans while the object moves (perpendicularly) past the line of pixels in the image sensor. For a given field of view, one line scan camera typically provides more resolution than multiple area scan cameras, at a lower cost, without image smear or the redundant processing of frame overlaps.<br>
 
-Difference between a line scan camera and an area scan camera can be found here: 
+Differences between a line scan camera and an area scan camera can be found here: 
 
 -	Line Scan and Area Scan Cameras for the Inspection of Pharmaceutical Products:
 https://www.youtube.com/watch?v=EzL_3BbEI20
