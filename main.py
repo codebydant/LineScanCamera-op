@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 from sys import platform
 
-# ----------------------------------------------------- System
+# ----------------------------------------------------- System.
 # check if platform is windows or linux:
 if platform == "linux" or platform == "linux2":
     sys.path.append("/opt/opencv-4.1.2/build/lib/python3")
